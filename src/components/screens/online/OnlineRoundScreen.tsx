@@ -52,33 +52,35 @@ export function OnlineRoundScreen({
   const expired = remainingMs <= 0;
 
   return (
-    <ScreenShell>
-      <div className="text-center">
-        <p className="text-sm font-semibold uppercase tracking-wide text-foreground/50">
-          Round {view.currentRound} of {view.totalRounds}
+    <ScreenShell size="wide">
+      <div className="mx-auto flex w-full max-w-sm flex-col gap-6">
+        <div className="text-center">
+          <p className="text-sm font-semibold uppercase tracking-wide text-foreground/50">
+            Round {view.currentRound} of {view.totalRounds}
+          </p>
+          <ProgressBar progress={(view.currentRound - 1) / view.totalRounds} />
+        </div>
+
+        <div className="rounded-2xl bg-surface p-6 text-center shadow-sm">
+          <h2 className="text-lg font-bold text-primary">
+            Who&rsquo;s most likely to...?
+          </h2>
+          <p className="mt-2 text-xl font-semibold">{view.currentStatement}</p>
+        </div>
+
+        <div className="text-center">
+          <p className="text-sm text-foreground/60">
+            {expired ? "Time's up" : `${seconds}s left`}
+          </p>
+          <ProgressBar progress={remainingMs / VOTE_DURATION_MS} />
+        </div>
+
+        <p className="text-center text-sm text-foreground/60">
+          Vote ({view.votedCount}/{view.players.length} voted)
         </p>
-        <ProgressBar progress={(view.currentRound - 1) / view.totalRounds} />
       </div>
 
-      <div className="rounded-2xl bg-surface p-6 text-center shadow-sm">
-        <h2 className="text-lg font-bold text-primary">
-          Who&rsquo;s most likely to...?
-        </h2>
-        <p className="mt-2 text-xl font-semibold">{view.currentStatement}</p>
-      </div>
-
-      <div className="text-center">
-        <p className="text-sm text-foreground/60">
-          {expired ? "Time's up" : `${seconds}s left`}
-        </p>
-        <ProgressBar progress={remainingMs / VOTE_DURATION_MS} />
-      </div>
-
-      <p className="text-center text-sm text-foreground/60">
-        Vote ({view.votedCount}/{view.players.length} voted)
-      </p>
-
-      <div className="flex max-h-80 flex-col gap-3 overflow-y-auto">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {view.players.map((p) => (
           <BigButton
             key={p.id}

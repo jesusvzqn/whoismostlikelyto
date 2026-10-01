@@ -28,7 +28,7 @@ export function LobbyScreen({
   const canStart = view.players.length >= MIN_PLAYERS;
 
   return (
-    <ScreenShell>
+    <ScreenShell size="wide">
       <div className="flex flex-col items-center gap-4 rounded-2xl bg-surface p-6 text-center shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-wide text-foreground/50">
           Room code
@@ -45,7 +45,7 @@ export function LobbyScreen({
         <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/50">
           Players ({view.players.length}/{MAX_PLAYERS})
         </p>
-        <ul className="flex flex-col gap-2">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {view.players.map((p) => (
             <li
               key={p.id}
@@ -65,19 +65,21 @@ export function LobbyScreen({
         </ul>
       </div>
 
-      {view.isHost ? (
-        <BigButton disabled={!canStart || pending} onClick={handleStart}>
-          {pending
-            ? "Starting..."
-            : canStart
-              ? `Start game (${view.players.length} players)`
-              : `Waiting for at least ${MIN_PLAYERS} players`}
-        </BigButton>
-      ) : (
-        <p className="text-center text-sm text-foreground/60">
-          Waiting for other players...
-        </p>
-      )}
+      <div className="mx-auto w-full max-w-sm">
+        {view.isHost ? (
+          <BigButton disabled={!canStart || pending} onClick={handleStart}>
+            {pending
+              ? "Starting..."
+              : canStart
+                ? `Start game (${view.players.length} players)`
+                : `Waiting for at least ${MIN_PLAYERS} players`}
+          </BigButton>
+        ) : (
+          <p className="text-center text-sm text-foreground/60">
+            Waiting for other players...
+          </p>
+        )}
+      </div>
     </ScreenShell>
   );
 }
