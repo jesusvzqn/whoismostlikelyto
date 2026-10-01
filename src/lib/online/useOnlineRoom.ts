@@ -54,23 +54,19 @@ export function useOnlineRoom() {
         );
         const view = await parseJsonResponse<RoomView>(res);
         setState((s) => (s.code === code ? { ...s, view, status: "ready", error: null } : s));
-      } catch (err) {
+      } catch {
         if (signal?.aborted) return;
         clearOnlineSession();
-        setState((s) => {
-          if (s.code !== code) return s;
-          // Never successfully loaded this room (e.g. a stale session from a
-          // previous visit whose room has since expired): start fresh
-          // instead of showing a dead-end "not found" error screen.
-          if (s.view === null) {
-            return { code: null, token: null, view: null, status: "idle", error: null };
-          }
-          return {
-            ...s,
-            status: "error",
-            error: err instanceof Error ? err.message : "Room not found",
-          };
-        });
+        // Whether this is the very first reconnect attempt (resuming a
+        // session from a previous visit) or a later poll, a failure here
+        // means the room is gone (expired, finished, or never existed) —
+        // always surface a clear message and let the player choose to head
+        // back to the home screen, instead of silently bouncing them.
+        setState((s) =>
+          s.code !== code
+            ? s
+            : { ...s, status: "error", error: "This room no longer exists." }
+        );
       }
     },
     [code, token]

@@ -55,7 +55,7 @@ export function OnlineGame({
             onExitToMenu();
           }}
         >
-          Back to menu
+          Go to home screen
         </BigButton>
       </ScreenShell>
     );

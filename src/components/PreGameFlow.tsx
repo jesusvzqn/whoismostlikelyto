@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OnlineGame } from "@/components/OnlineGame";
 import { ModeSelectScreen } from "@/components/screens/ModeSelectScreen";
 import { RulesScreen } from "@/components/screens/RulesScreen";
 import { WaitingScreen } from "@/components/screens/online/WaitingScreen";
 import { ScreenShell } from "@/components/ui/ScreenShell";
+import { loadOnlineSession } from "@/lib/storage";
 import { useOnlineEnabled } from "@/lib/online/useOnlineEnabled";
 
 type Stage =
@@ -16,6 +17,17 @@ type Stage =
 export function PreGameFlow({ initialJoinCode }: { initialJoinCode?: string }) {
   const onlineEnabled = useOnlineEnabled();
   const [stage, setStage] = useState<Stage>({ name: "rules" });
+
+  // Resuming an existing session (someone accidentally closed the tab,
+  // refreshed, or lost connection) takes priority over the rules/mode-select
+  // screens — jump straight back into the room. Done in an effect rather
+  // than the initial state so the server-rendered first paint (which can't
+  // read localStorage) always matches the client's first render.
+  useEffect(() => {
+    if (loadOnlineSession()) {
+      setStage({ name: "online", mode: "join" });
+    }
+  }, []);
 
   if (onlineEnabled === null) {
     return <WaitingScreen message="Loading..." />;
