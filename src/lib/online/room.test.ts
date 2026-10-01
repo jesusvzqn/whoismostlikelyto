@@ -183,18 +183,23 @@ describe("advanceRound", () => {
     return s;
   }
 
-  it("works when called by any player, not just the host", () => {
+  it("works when called by the host", () => {
     const room = revealedRoom();
-    const s = advanceRound(room, "guest", 2_000_000);
+    const s = advanceRound(room, "host", 2_000_000);
     expect(s.phase).toBe("voting");
     expect(s.currentRound).toBe(2);
     expect(s.votingEndsAt).toBe(2_000_000 + 60_000);
   });
 
-  it("is idempotent: a second caller after the round already moved on is a no-op", () => {
+  it("is a no-op for a non-host player", () => {
+    const room = revealedRoom();
+    expect(advanceRound(room, "guest", 2_000_000)).toBe(room);
+  });
+
+  it("is idempotent: calling it again after the round already moved on is a no-op", () => {
     const room = revealedRoom();
     const first = advanceRound(room, "host", 2_000_000);
-    const second = advanceRound(first, "guest", 3_000_000);
+    const second = advanceRound(first, "host", 3_000_000);
     expect(second).toBe(first);
   });
 

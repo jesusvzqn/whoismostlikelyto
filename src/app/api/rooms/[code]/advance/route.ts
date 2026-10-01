@@ -31,6 +31,12 @@ export async function POST(
   if (!player) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  if (player.id !== room.hostId) {
+    return NextResponse.json(
+      { error: "Only the host can advance to the next round" },
+      { status: 403 }
+    );
+  }
 
   const updated = advanceRound(room, player.id);
   await writeRoom(updated);

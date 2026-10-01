@@ -186,14 +186,20 @@ describe("room routes wiring", () => {
     expect(revealed.results[0].tally).toHaveLength(3);
     expect(JSON.stringify(revealed)).not.toContain("token");
 
-    // Advancing is not host-gated — a guest can move the round along.
+    // Advancing is host-only — a guest cannot move the round along.
     const guestAdvance = await advanceRoute(
       postJson(`http://x/api/rooms/${code}/advance`, { token: guestToken }),
       { params: { code } }
     );
-    const guestAdvanceView = await guestAdvance.json();
-    expect(guestAdvanceView.phase).toBe("voting");
-    expect(guestAdvanceView.currentRound).toBe(2);
+    expect(guestAdvance.status).toBe(403);
+
+    const hostAdvance = await advanceRoute(
+      postJson(`http://x/api/rooms/${code}/advance`, { token: hostToken }),
+      { params: { code } }
+    );
+    const hostAdvanceView = await hostAdvance.json();
+    expect(hostAdvanceView.phase).toBe("voting");
+    expect(hostAdvanceView.currentRound).toBe(2);
 
     // Finishing is host-only.
     const guestFinish = await finishRoute(

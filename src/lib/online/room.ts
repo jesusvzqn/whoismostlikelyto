@@ -152,16 +152,15 @@ export function castVote(
   return everyoneVoted ? resolveRound(updated) : updated;
 }
 
-/** Any player may advance the round (first click wins, idempotent) — unlike
- * the old 2-player "both must confirm" model, host-gating this would let one
- * AFK participant stall a room of up to 10. */
+/** Host-only: the host controls the game's pace, same as starting and
+ * finishing it. */
 export function advanceRound(
   room: RoomState,
   requesterId: PlayerId,
   now: number = Date.now()
 ): RoomState {
+  if (requesterId !== room.hostId) return room;
   if (room.phase !== "reveal") return room;
-  if (!room.players.some((p) => p.id === requesterId)) return room;
 
   if (room.currentRound >= room.totalRounds) {
     return { ...room, phase: "summary" };

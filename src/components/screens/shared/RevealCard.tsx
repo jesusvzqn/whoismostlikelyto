@@ -100,10 +100,16 @@ export function RevealCard({
         )}
       </div>
 
-      {!suspense && (
+      {!suspense && isHost && (
         <BigButton onClick={onContinue}>
           {isLastRound ? "See results" : "Next round"}
         </BigButton>
+      )}
+
+      {!suspense && !isHost && (
+        <p className="text-center text-sm text-foreground/60">
+          Waiting for the host to continue...
+        </p>
       )}
 
       {!suspense && !isLastRound && isHost && onFinish && (
