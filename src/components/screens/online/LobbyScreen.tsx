@@ -1,7 +1,6 @@
 "use client";
 
-import QRCode from "qrcode";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { BigButton } from "@/components/ui/BigButton";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 import { MAX_PLAYERS, MIN_PLAYERS } from "@/lib/online/types";
@@ -14,17 +13,7 @@ export function LobbyScreen({
   view: RoomView;
   onStart: () => Promise<void>;
 }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [pending, setPending] = useState(false);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const url = `${window.location.origin}/join/${view.code}`;
-    QRCode.toCanvas(canvas, url, { width: 200, margin: 1 }).catch(() => {
-      // Non-critical: the code is also shown as text below.
-    });
-  }, [view.code]);
 
   async function handleStart() {
     if (pending) return;
@@ -47,9 +36,8 @@ export function LobbyScreen({
         <p className="text-4xl font-extrabold tracking-[0.3em] text-primary">
           {view.code}
         </p>
-        <canvas ref={canvasRef} className="rounded-xl" />
         <p className="text-sm text-foreground/60">
-          Share the code or have people scan the QR to join.
+          Share this code with your team so they can join.
         </p>
       </div>
 
@@ -87,7 +75,7 @@ export function LobbyScreen({
         </BigButton>
       ) : (
         <p className="text-center text-sm text-foreground/60">
-          Waiting for the host to start the game...
+          Waiting for other players...
         </p>
       )}
     </ScreenShell>

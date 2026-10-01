@@ -5,7 +5,7 @@ import { ScreenShell } from "@/components/ui/ScreenShell";
 
 const RULES = [
   'Each round shows a prompt: "Who\'s most likely to...?"',
-  "Create a room and share the code or QR with up to 9 other people (10 total). You, the host, decide when the lobby closes and the game begins.",
+  "Create a room and share the code with up to 9 other people (10 total). You, the host, decide when the lobby closes and the game begins.",
   "Vote for anyone, including yourself — just confirm before your vote is locked in.",
   "You have 60 seconds to vote each round. Miss the window and your vote simply doesn't count.",
   "Everyone sees the full vote tally after each round, ties and all. Nobody ever sees who voted for whom.",
