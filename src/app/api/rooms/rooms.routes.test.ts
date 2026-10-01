@@ -35,9 +35,9 @@ function postJson(url: string, body: unknown) {
   });
 }
 
-async function createTestRoom(totalRounds = 10) {
+async function createTestRoom() {
   const res = await createRoute(
-    postJson("http://x/api/rooms", { hostName: "Ana", totalRounds })
+    postJson("http://x/api/rooms", { hostName: "Ana" })
   );
   return (await res.json()) as { code: string; token: string };
 }
@@ -83,14 +83,14 @@ describe("room routes wiring", () => {
   it("404s every route when online mode is disabled", async () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     const res = await createRoute(
-      postJson("http://x/api/rooms", { hostName: "Ana", totalRounds: 10 })
+      postJson("http://x/api/rooms", { hostName: "Ana" })
     );
     expect(res.status).toBe(404);
   });
 
   it("400s room creation on invalid input", async () => {
     const res = await createRoute(
-      postJson("http://x/api/rooms", { hostName: "", totalRounds: 10 })
+      postJson("http://x/api/rooms", { hostName: "" })
     );
     expect(res.status).toBe(400);
   });

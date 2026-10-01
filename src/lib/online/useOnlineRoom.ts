@@ -90,13 +90,13 @@ export function useOnlineRoom() {
     };
   }, [code, token, poll]);
 
-  const createRoom = useCallback(async (hostName: string, totalRounds: number) => {
+  const createRoom = useCallback(async (hostName: string) => {
     setState((s) => ({ ...s, status: "working", error: null }));
     try {
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ hostName, totalRounds }),
+        body: JSON.stringify({ hostName }),
       });
       const data = await parseJsonResponse<{ code: string; token: string; view: RoomView }>(res);
       saveOnlineSession({ code: data.code, token: data.token });

@@ -11,11 +11,11 @@ const baloo = Baloo_2({
 export const metadata: Metadata = {
   title: "Who's most likely to...?",
   description:
-    "A party game for your team: find out who's most likely to do what.",
+    "A party game for the team: find out who's most likely to do what.",
   openGraph: {
     title: "Who's most likely to...?",
     description:
-      "A party game for your team: find out who's most likely to do what.",
+      "A party game for the team: find out who's most likely to do what.",
     type: "website",
   },
 };

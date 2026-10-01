@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { BigButton } from "@/components/ui/BigButton";
-import { RoundsWheel } from "@/components/ui/RoundsWheel";
 import { ScreenShell } from "@/components/ui/ScreenShell";
-import { MAX_NAME_LENGTH, MAX_ROUNDS, MIN_ROUNDS } from "@/lib/online/types";
+import { MAX_NAME_LENGTH, TOTAL_ROUNDS } from "@/lib/online/types";
 
 export function CreateRoomScreen({
   onCreate,
@@ -12,13 +11,12 @@ export function CreateRoomScreen({
   error,
   onBack,
 }: {
-  onCreate: (hostName: string, totalRounds: number) => void;
+  onCreate: (hostName: string) => void;
   pending: boolean;
   error: string | null;
   onBack: () => void;
 }) {
   const [name, setName] = useState("");
-  const [rounds, setRounds] = useState(MIN_ROUNDS);
   const [touched, setTouched] = useState(false);
 
   const trimmed = name.trim();
@@ -28,7 +26,7 @@ export function CreateRoomScreen({
     e.preventDefault();
     setTouched(true);
     if (!isValid || pending) return;
-    onCreate(trimmed, rounds);
+    onCreate(trimmed);
   }
 
   return (
@@ -54,15 +52,9 @@ export function CreateRoomScreen({
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-semibold">Number of rounds</span>
-          <RoundsWheel
-            min={MIN_ROUNDS}
-            max={MAX_ROUNDS}
-            value={rounds}
-            onChange={setRounds}
-          />
-        </div>
+        <p className="text-center text-sm text-foreground/60">
+          {TOTAL_ROUNDS} rounds per game.
+        </p>
 
         {error && (
           <div className="rounded-xl bg-red-500/10 px-4 py-2 text-sm text-red-600">

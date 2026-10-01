@@ -1,7 +1,7 @@
 export const MIN_PLAYERS = 2;
-export const MAX_PLAYERS = 10;
-export const MIN_ROUNDS = 10;
-export const MAX_ROUNDS = 50;
+export const MAX_PLAYERS = 15;
+/** Rounds are fixed for every game — not configurable by the host. */
+export const TOTAL_ROUNDS = 20;
 export const MAX_NAME_LENGTH = 15;
 export const VOTE_DURATION_MS = 60_000;
 

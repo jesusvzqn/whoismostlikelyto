@@ -3,7 +3,7 @@ import { STATEMENTS } from "@/data/statements";
 /**
  * Picks a random statement from the pool that hasn't been used yet.
  * Only throws if the pool is exhausted, which can't happen given
- * MAX_ROUNDS <= STATEMENTS.length.
+ * TOTAL_ROUNDS <= STATEMENTS.length.
  */
 export function pickStatement(used: readonly string[]): string {
   const available = STATEMENTS.filter((s) => !used.includes(s));
