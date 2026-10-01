@@ -1,14 +1,13 @@
 "use client";
 
 import { CreateRoomScreen } from "@/components/screens/online/CreateRoomScreen";
-import { HostLobbyScreen } from "@/components/screens/online/HostLobbyScreen";
 import { JoinRoomScreen } from "@/components/screens/online/JoinRoomScreen";
+import { LobbyScreen } from "@/components/screens/online/LobbyScreen";
 import { OnlineRevealScreen } from "@/components/screens/online/OnlineRevealScreen";
 import { OnlineRoundScreen } from "@/components/screens/online/OnlineRoundScreen";
 import { OnlineSummaryScreen } from "@/components/screens/online/OnlineSummaryScreen";
 import { WaitingScreen } from "@/components/screens/online/WaitingScreen";
 import { BigButton } from "@/components/ui/BigButton";
-import { DevCredit } from "@/components/ui/DevCredit";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 import { useOnlineRoom } from "@/lib/online/useOnlineRoom";
 
@@ -45,10 +44,9 @@ export function OnlineGame({
   if (room.status === "error") {
     return (
       <ScreenShell>
-        <DevCredit />
         <div className="rounded-2xl bg-surface p-6 text-center shadow-sm">
           <p className="text-lg font-semibold">
-            {room.error ?? "Esta sala ya no existe."}
+            {room.error ?? "This room no longer exists."}
           </p>
         </div>
         <BigButton
@@ -57,7 +55,7 @@ export function OnlineGame({
             onExitToMenu();
           }}
         >
-          Volver al menú
+          Back to menu
         </BigButton>
       </ScreenShell>
     );
@@ -67,35 +65,29 @@ export function OnlineGame({
   if (!view) {
     return (
       <WaitingScreen
-        message={
-          room.status === "reconnecting" ? "Reconectando..." : "Conectando..."
-        }
+        message={room.status === "reconnecting" ? "Reconnecting..." : "Connecting..."}
       />
     );
   }
 
-  if (view.phase === "waiting-for-player2") {
-    return <HostLobbyScreen code={view.code} />;
+  if (view.phase === "lobby") {
+    return <LobbyScreen view={view} onStart={room.startGame} />;
   }
 
   if (view.phase === "voting") {
-    const myVote = view.votes[view.you];
-    if (myVote !== null) {
-      return <WaitingScreen message="Esperando el voto de tu rival..." />;
+    if (view.yourVote !== null) {
+      return (
+        <WaitingScreen
+          message={`Waiting for other votes... (${view.votedCount}/${view.players.length})`}
+        />
+      );
     }
     return <OnlineRoundScreen view={view} onVote={room.castVote} />;
   }
 
   if (view.phase === "reveal") {
-    if (view.advanceReady[view.you]) {
-      return <WaitingScreen message="Esperando a que tu rival continúe..." />;
-    }
     return (
-      <OnlineRevealScreen
-        view={view}
-        onAdvance={room.advance}
-        onFinish={room.finish}
-      />
+      <OnlineRevealScreen view={view} onAdvance={room.advance} onFinish={room.finish} />
     );
   }
 

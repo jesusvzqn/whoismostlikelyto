@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { generateToken } from "@/lib/online/ids";
+import { generatePlayerId, generateToken } from "@/lib/online/ids";
 import { isOnlineModeEnabled, readRoom, writeRoom } from "@/lib/online/redis";
-import { joinRoom, toView } from "@/lib/online/room";
+import { canJoin, joinRoom, toView } from "@/lib/online/room";
 import { normalizeCode, normalizeName } from "@/lib/online/validate";
 
 export async function POST(
@@ -27,12 +27,18 @@ export async function POST(
   if (!room) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 });
   }
-  if (room.phase !== "waiting-for-player2" || room.players[1] !== null) {
+
+  const joinability = canJoin(room);
+  if (joinability === "started") {
+    return NextResponse.json({ error: "Game already started" }, { status: 409 });
+  }
+  if (joinability === "full") {
     return NextResponse.json({ error: "Room is full" }, { status: 409 });
   }
 
+  const playerId = generatePlayerId();
   const token = generateToken();
-  const joined = joinRoom(room, name, token);
+  const joined = joinRoom(room, name, playerId, token);
   await writeRoom(joined);
 
   return NextResponse.json({ token, view: toView(joined, token) });

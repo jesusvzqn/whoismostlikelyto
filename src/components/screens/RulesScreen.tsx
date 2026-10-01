@@ -1,26 +1,25 @@
 "use client";
 
 import { BigButton } from "@/components/ui/BigButton";
-import { DevCredit } from "@/components/ui/DevCredit";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 
 const RULES = [
-  'Aparece una frase: "¿Quién es más probable que...?".',
-  "Jugando en el mismo móvil, cada uno vota en secreto pasándoos el teléfono; jugando a distancia, cada uno vota desde su propio móvil a la vez.",
-  "Podéis votaros a vosotros mismos.",
-  "Si votáis a la misma persona, sumáis un punto entre los dos: la puntuación es común.",
-  "Al final descubriréis cuánto os conocéis.",
+  'Each round shows a prompt: "Who\'s most likely to...?"',
+  "Create a room and share the code or QR with up to 9 other people (10 total). You, the host, decide when the lobby closes and the game begins.",
+  "Vote for anyone, including yourself — just confirm before your vote is locked in.",
+  "You have 60 seconds to vote each round. Miss the window and your vote simply doesn't count.",
+  "Everyone sees the full vote tally after each round, ties and all. Nobody ever sees who voted for whom.",
+  "At the end, a final ranking shows who racked up the most votes overall.",
 ];
 
 export function RulesScreen({ onContinue }: { onContinue: () => void }) {
   return (
     <ScreenShell>
-      <DevCredit />
       <div className="text-center">
         <h1 className="text-3xl font-extrabold text-primary">
-          ¿Quién es más probable que...?
+          Who&rsquo;s most likely to...?
         </h1>
-        <p className="mt-2 text-foreground/70">Un juego para dos</p>
+        <p className="mt-2 text-foreground/70">A party game for your team</p>
       </div>
 
       <ol className="flex flex-col gap-3 rounded-2xl bg-surface p-5 shadow-sm">
@@ -34,7 +33,7 @@ export function RulesScreen({ onContinue }: { onContinue: () => void }) {
         ))}
       </ol>
 
-      <BigButton onClick={onContinue}>Empezar</BigButton>
+      <BigButton onClick={onContinue}>Start</BigButton>
     </ScreenShell>
   );
 }

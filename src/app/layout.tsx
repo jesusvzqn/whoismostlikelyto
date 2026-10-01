@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Baloo_2 } from "next/font/google";
-import { GameProvider } from "@/context/GameContext";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -10,13 +9,13 @@ const baloo = Baloo_2({
 });
 
 export const metadata: Metadata = {
-  title: "¿Quién es más probable que...?",
+  title: "Who's most likely to...?",
   description:
-    "Un juego de fiesta para dos jugadores: descubrid cuánto os conocéis.",
+    "A party game for your team: find out who's most likely to do what.",
   openGraph: {
-    title: "¿Quién es más probable que...?",
+    title: "Who's most likely to...?",
     description:
-      "Un juego de fiesta para dos jugadores: descubrid cuánto os conocéis.",
+      "A party game for your team: find out who's most likely to do what.",
     type: "website",
   },
 };
@@ -34,9 +33,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="en">
       <body className={`${baloo.variable} font-display antialiased`}>
-        <GameProvider>{children}</GameProvider>
+        {children}
       </body>
     </html>
   );

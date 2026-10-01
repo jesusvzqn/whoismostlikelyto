@@ -79,7 +79,7 @@ export function RoundsWheel({ min, max, value, onChange }: RoundsWheelProps) {
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={value}
-        aria-label="Número de rondas"
+        aria-label="Number of rounds"
         onScroll={handleScroll}
         onKeyDown={handleKeyDown}
         className="scrollbar-hidden overflow-y-scroll scroll-smooth rounded-2xl bg-surface/60 [scroll-snap-type:y_mandatory] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateToken } from "@/lib/online/ids";
+import { generatePlayerId, generateToken } from "@/lib/online/ids";
 import { generateUniqueRoomCode, isOnlineModeEnabled, writeRoom } from "@/lib/online/redis";
 import { createRoom, toView } from "@/lib/online/room";
 import { clampRounds, normalizeName } from "@/lib/online/validate";
@@ -18,7 +18,8 @@ export async function POST(req: Request) {
 
   const code = await generateUniqueRoomCode();
   const token = generateToken();
-  const room = createRoom(code, hostName, token, totalRounds);
+  const hostId = generatePlayerId();
+  const room = createRoom(code, hostName, hostId, token, totalRounds);
   await writeRoom(room);
 
   return NextResponse.json({ code, token, view: toView(room, token) });

@@ -1,170 +1,264 @@
-import { pickStatement } from "@/lib/game/statements";
-import type { PlayerIndex } from "@/lib/game/types";
-import type { RoomState, RoomView } from "./types";
+import { pickStatement } from "./statements";
+import {
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  VOTE_DURATION_MS,
+  type PlayerId,
+  type RankingEntry,
+  type RoomState,
+  type RoomView,
+  type RoundResult,
+  type RoundTally,
+} from "./types";
 
 export function createRoom(
   code: string,
   hostName: string,
+  hostId: PlayerId,
   hostToken: string,
   totalRounds: number
 ): RoomState {
+  const now = Date.now();
   return {
     code,
-    createdAt: Date.now(),
+    createdAt: now,
+    hostId,
     totalRounds,
-    currentRound: 1,
-    firstVoterIndex: 0,
+    currentRound: 0,
     usedStatements: [],
     currentStatement: null,
-    votes: [null, null],
+    players: [{ id: hostId, name: hostName, token: hostToken, joinedAt: now }],
+    phase: "lobby",
+    votingEndsAt: null,
+    votes: {},
     results: [],
-    phase: "waiting-for-player2",
-    players: [{ name: hostName, token: hostToken }, null],
-    advanceReady: [false, false],
   };
+}
+
+export type Joinability = "ok" | "started" | "full";
+
+export function canJoin(room: RoomState): Joinability {
+  if (room.phase !== "lobby") return "started";
+  if (room.players.length >= MAX_PLAYERS) return "full";
+  return "ok";
 }
 
 export function joinRoom(
   room: RoomState,
   name: string,
+  playerId: PlayerId,
   token: string
 ): RoomState {
-  if (room.phase !== "waiting-for-player2" || room.players[1] !== null) {
-    return room;
-  }
+  if (canJoin(room) !== "ok") return room;
+  return {
+    ...room,
+    players: [
+      ...room.players,
+      { id: playerId, name, token, joinedAt: Date.now() },
+    ],
+  };
+}
+
+/** Replaces the old auto-start-on-2nd-join behavior: the host decides when
+ * the lobby closes and the first round begins. */
+export function startGame(
+  room: RoomState,
+  requesterId: PlayerId,
+  now: number = Date.now()
+): RoomState {
+  if (room.phase !== "lobby") return room;
+  if (requesterId !== room.hostId) return room;
+  if (room.players.length < MIN_PLAYERS) return room;
+
   const statement = pickStatement(room.usedStatements);
   return {
     ...room,
-    players: [room.players[0], { name, token }],
+    currentRound: 1,
     usedStatements: [...room.usedStatements, statement],
     currentStatement: statement,
     phase: "voting",
+    votingEndsAt: now + VOTE_DURATION_MS,
+    votes: {},
   };
+}
+
+function tallyVotes(room: RoomState): RoundTally[] {
+  return room.players.map((p) => ({
+    candidateId: p.id,
+    votes: Object.values(room.votes).filter((candidateId) => candidateId === p.id)
+      .length,
+  }));
+}
+
+/** Tallies the round in progress and moves to "reveal". Never exposes who
+ * voted for whom — only aggregate counts per candidate. Ties are preserved:
+ * every candidate sharing the max count ends up in `winners`. */
+function resolveRound(room: RoomState): RoomState {
+  const tally = tallyVotes(room);
+  const maxVotes = Math.max(0, ...tally.map((t) => t.votes));
+  const winners =
+    maxVotes > 0
+      ? tally.filter((t) => t.votes === maxVotes).map((t) => t.candidateId)
+      : [];
+
+  const result: RoundResult = {
+    round: room.currentRound,
+    statement: room.currentStatement ?? "",
+    tally,
+    winners,
+    votesCast: Object.keys(room.votes).length,
+  };
+
+  return {
+    ...room,
+    results: [...room.results, result],
+    votes: {},
+    votingEndsAt: null,
+    phase: "reveal",
+  };
+}
+
+/** Called from every route right after reading the room, so the 60s voting
+ * timer gets enforced without a background worker: the next poll/action to
+ * touch an expired room resolves it. A no-op before expiry. */
+export function maybeResolveRound(
+  room: RoomState,
+  now: number = Date.now()
+): RoomState {
+  if (room.phase !== "voting") return room;
+  if (room.votingEndsAt === null || now < room.votingEndsAt) return room;
+  return resolveRound(room);
 }
 
 export function castVote(
   room: RoomState,
-  playerIndex: PlayerIndex,
-  vote: PlayerIndex
+  voterId: PlayerId,
+  candidateId: PlayerId,
+  now: number = Date.now()
 ): RoomState {
+  // If voting already expired, resolve the round first and drop this vote —
+  // a late vote simply doesn't count.
+  const settled = maybeResolveRound(room, now);
+  if (settled !== room) return settled;
+
   if (room.phase !== "voting") return room;
-  if (room.votes[playerIndex] !== null) return room; // already voted, idempotent
+  if (!room.players.some((p) => p.id === voterId)) return room;
+  if (!room.players.some((p) => p.id === candidateId)) return room;
+  if (voterId in room.votes) return room; // already voted, idempotent
 
-  const votes: [PlayerIndex | null, PlayerIndex | null] = [...room.votes];
-  votes[playerIndex] = vote;
-
-  const otherIndex: PlayerIndex = playerIndex === 0 ? 1 : 0;
-  const otherVote = votes[otherIndex];
-  if (otherVote === null) {
-    return { ...room, votes };
-  }
-
-  const finalVotes: [PlayerIndex, PlayerIndex] =
-    playerIndex === 0 ? [vote, otherVote] : [otherVote, vote];
-  const matched = finalVotes[0] === finalVotes[1];
-
-  return {
-    ...room,
-    votes: finalVotes,
-    results: [
-      ...room.results,
-      {
-        statement: room.currentStatement ?? "",
-        round: room.currentRound,
-        votes: finalVotes,
-        matched,
-      },
-    ],
-    phase: "reveal",
-    advanceReady: [false, false],
-  };
+  const votes = { ...room.votes, [voterId]: candidateId };
+  const updated = { ...room, votes };
+  const everyoneVoted = Object.keys(votes).length === room.players.length;
+  return everyoneVoted ? resolveRound(updated) : updated;
 }
 
-/** Marks `playerIndex` as ready to leave the reveal screen. The round only
- * actually advances once both players have confirmed — one player
- * continuing never drags the other into the next round. */
-export function confirmAdvance(
+/** Any player may advance the round (first click wins, idempotent) — unlike
+ * the old 2-player "both must confirm" model, host-gating this would let one
+ * AFK participant stall a room of up to 10. */
+export function advanceRound(
   room: RoomState,
-  playerIndex: PlayerIndex
+  requesterId: PlayerId,
+  now: number = Date.now()
 ): RoomState {
   if (room.phase !== "reveal") return room;
-  if (room.advanceReady[playerIndex]) return room; // already confirmed, idempotent
+  if (!room.players.some((p) => p.id === requesterId)) return room;
 
-  const advanceReady: [boolean, boolean] = [...room.advanceReady];
-  advanceReady[playerIndex] = true;
-  const updated = { ...room, advanceReady };
-
-  if (!advanceReady[0] || !advanceReady[1]) {
-    return updated;
-  }
-  return advanceRound(updated);
-}
-
-function advanceRound(room: RoomState): RoomState {
   if (room.currentRound >= room.totalRounds) {
-    return { ...room, phase: "summary", advanceReady: [false, false] };
+    return { ...room, phase: "summary" };
   }
+
   const statement = pickStatement(room.usedStatements);
-  const nextFirstVoter: PlayerIndex = room.firstVoterIndex === 0 ? 1 : 0;
   return {
     ...room,
     currentRound: room.currentRound + 1,
-    firstVoterIndex: nextFirstVoter,
     usedStatements: [...room.usedStatements, statement],
     currentStatement: statement,
-    votes: [null, null],
     phase: "voting",
-    advanceReady: [false, false],
+    votingEndsAt: now + VOTE_DURATION_MS,
+    votes: {},
   };
 }
 
-/** Either player can end the game early from the reveal screen; the other
- * player's device picks up the resulting `summary` phase on its next poll. */
-export function finishRoom(room: RoomState): RoomState {
-  if (room.phase !== "reveal") return room;
-  return { ...room, phase: "summary", advanceReady: [false, false] };
+/** Host-only: ending the game for everyone else isn't a call any one of up
+ * to 10 participants should get to make unilaterally. */
+export function finishRoom(room: RoomState, requesterId: PlayerId): RoomState {
+  if (requesterId !== room.hostId) return room;
+  if (room.phase !== "voting" && room.phase !== "reveal") return room;
+  return { ...room, phase: "summary", votingEndsAt: null };
 }
 
-export function replayRoom(room: RoomState): RoomState {
+/** Host-only. Resets to the lobby (not straight back into voting) so
+ * latecomers can join the next game before the host restarts it. */
+export function replayRoom(room: RoomState, requesterId: PlayerId): RoomState {
+  if (requesterId !== room.hostId) return room;
   if (room.phase !== "summary") return room;
-  const statement = pickStatement([]);
   return {
     ...room,
-    currentRound: 1,
-    firstVoterIndex: 0,
-    usedStatements: [statement],
-    currentStatement: statement,
-    votes: [null, null],
+    phase: "lobby",
+    currentRound: 0,
+    usedStatements: [],
+    currentStatement: null,
+    votingEndsAt: null,
+    votes: {},
     results: [],
-    phase: "voting",
-    advanceReady: [false, false],
   };
 }
 
-export function toView(room: RoomState, viewerToken: string): RoomView {
-  const you = room.players.findIndex(
-    (p) => p?.token === viewerToken
-  ) as PlayerIndex;
+/** Ranking by total votes received across every round, competition-style
+ * ties (e.g. a 3-way tie at the top produces ranks [1, 1, 1, 4]). */
+export function computeRanking(room: RoomState): RankingEntry[] {
+  const totals = new Map<PlayerId, number>();
+  for (const player of room.players) totals.set(player.id, 0);
+  for (const result of room.results) {
+    for (const t of result.tally) {
+      totals.set(t.candidateId, (totals.get(t.candidateId) ?? 0) + t.votes);
+    }
+  }
 
-  const revealVotes = room.phase === "reveal" || room.phase === "summary";
-  const votes: [PlayerIndex | null, PlayerIndex | null] = [null, null];
-  const otherIndex: PlayerIndex = you === 0 ? 1 : 0;
-  votes[you] = room.votes[you];
-  votes[otherIndex] = revealVotes ? room.votes[otherIndex] : null;
+  const sorted = room.players
+    .map((p) => ({
+      playerId: p.id,
+      name: p.name,
+      totalVotes: totals.get(p.id) ?? 0,
+    }))
+    .sort((a, b) => b.totalVotes - a.totalVotes);
+
+  const ranking: RankingEntry[] = [];
+  let rank = 0;
+  let previousVotes: number | null = null;
+  sorted.forEach((entry, index) => {
+    if (previousVotes === null || entry.totalVotes !== previousVotes) {
+      rank = index + 1;
+      previousVotes = entry.totalVotes;
+    }
+    ranking.push({ rank, ...entry });
+  });
+  return ranking;
+}
+
+/** What a client actually receives — no tokens, and no voter-to-candidate
+ * mapping for anyone but the viewer's own pick. Returns null for an unknown
+ * token so the caller can respond 404/403 instead of leaking room state. */
+export function toView(room: RoomState, viewerToken: string): RoomView | null {
+  const viewer = room.players.find((p) => p.token === viewerToken);
+  if (!viewer) return null;
 
   return {
     code: room.code,
     createdAt: room.createdAt,
+    hostId: room.hostId,
     totalRounds: room.totalRounds,
     currentRound: room.currentRound,
-    firstVoterIndex: room.firstVoterIndex,
-    usedStatements: room.usedStatements,
     currentStatement: room.currentStatement,
-    results: room.results,
     phase: room.phase,
-    players: [room.players[0]?.name ?? null, room.players[1]?.name ?? null],
-    votes,
-    advanceReady: room.advanceReady,
-    you,
+    players: room.players.map((p) => ({ id: p.id, name: p.name })),
+    you: viewer.id,
+    isHost: viewer.id === room.hostId,
+    votingEndsAt: room.votingEndsAt,
+    serverNow: Date.now(),
+    yourVote: room.votes[viewer.id] ?? null,
+    votedCount: Object.keys(room.votes).length,
+    results: room.results,
+    finalRanking: room.phase === "summary" ? computeRanking(room) : undefined,
   };
 }

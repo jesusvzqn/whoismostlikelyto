@@ -1,4 +1,4 @@
-import { MAX_NAME_LENGTH, MAX_ROUNDS, MIN_ROUNDS } from "@/lib/game/types";
+import { MAX_NAME_LENGTH, MAX_ROUNDS, MIN_ROUNDS } from "./types";
 
 export function normalizeName(name: unknown): string | null {
   if (typeof name !== "string") return null;

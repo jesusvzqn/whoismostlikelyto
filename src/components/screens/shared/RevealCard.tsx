@@ -6,32 +6,25 @@ import { useEffect, useState } from "react";
 import { BigButton } from "@/components/ui/BigButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ScreenShell } from "@/components/ui/ScreenShell";
-import type { RoundResult } from "@/lib/game/types";
-
-const NO_MATCH_MESSAGES = [
-  "¡Vaya, no coincidís! La próxima seguro que sí.",
-  "Cada uno a su rollo. ¡No pasa nada!",
-  "Puntos de vista distintos, ¡qué interesante!",
-];
+import type { PlayerPublic, RoundResult } from "@/lib/online/types";
 
 export function RevealCard({
   players,
   lastResult,
   isLastRound,
+  isHost,
   onContinue,
   onFinish,
 }: {
-  players: [string, string];
+  players: PlayerPublic[];
   lastResult: RoundResult;
   isLastRound: boolean;
+  isHost: boolean;
   onContinue: () => void;
   onFinish?: () => void;
 }) {
   const [suspense, setSuspense] = useState(true);
   const [confirmingFinish, setConfirmingFinish] = useState(false);
-  const [p0, p1] = players;
-  const noMatchMessage =
-    NO_MATCH_MESSAGES[lastResult.round % NO_MATCH_MESSAGES.length];
 
   useEffect(() => {
     const timer = setTimeout(() => setSuspense(false), 900);
@@ -39,7 +32,7 @@ export function RevealCard({
   }, [lastResult]);
 
   useEffect(() => {
-    if (!suspense && lastResult.matched) {
+    if (!suspense && lastResult.winners.length > 0) {
       confetti({
         particleCount: 60,
         spread: 70,
@@ -48,6 +41,9 @@ export function RevealCard({
       });
     }
   }, [suspense, lastResult]);
+
+  const nameById = new Map(players.map((p) => [p.id, p.name]));
+  const sortedTally = [...lastResult.tally].sort((a, b) => b.votes - a.votes);
 
   return (
     <ScreenShell>
@@ -64,44 +60,63 @@ export function RevealCard({
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col gap-3"
+            className="flex w-full flex-col gap-2"
           >
-            <p className="text-sm text-foreground/60">
-              {p0} votó a <strong>{players[lastResult.votes[0]]}</strong>
-            </p>
-            <p className="text-sm text-foreground/60">
-              {p1} votó a <strong>{players[lastResult.votes[1]]}</strong>
-            </p>
-            {lastResult.matched ? (
-              <p className="text-xl font-extrabold text-green-600">
-                ¡Coincidís! 🎉
+            {lastResult.winners.length === 0 ? (
+              <p className="text-lg font-semibold text-foreground/70">
+                Nobody voted in time!
               </p>
             ) : (
-              <p className="text-lg font-semibold text-foreground/70">
-                ¡No coincidís! {noMatchMessage}
+              <p className="text-lg font-extrabold text-primary">
+                {lastResult.winners.length > 1
+                  ? "It's a tie! 🎉"
+                  : "Most voted! 🎉"}
               </p>
             )}
+            <ul className="flex flex-col gap-1.5 text-left">
+              {sortedTally.map((t) => {
+                const isWinner = lastResult.winners.includes(t.candidateId);
+                return (
+                  <li
+                    key={t.candidateId}
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 ${
+                      isWinner
+                        ? "bg-primary/15 font-bold text-primary"
+                        : "bg-background"
+                    }`}
+                  >
+                    <span>
+                      {isWinner ? "🏆 " : ""}
+                      {nameById.get(t.candidateId) ?? "?"}
+                    </span>
+                    <span>
+                      {t.votes} {t.votes === 1 ? "vote" : "votes"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           </motion.div>
         )}
       </div>
 
       {!suspense && (
         <BigButton onClick={onContinue}>
-          {isLastRound ? "Ver resultados" : "Siguiente ronda"}
+          {isLastRound ? "See results" : "Next round"}
         </BigButton>
       )}
 
-      {!suspense && !isLastRound && onFinish && (
+      {!suspense && !isLastRound && isHost && onFinish && (
         <BigButton variant="ghost" onClick={() => setConfirmingFinish(true)}>
-          Terminar partida
+          Finish game
         </BigButton>
       )}
 
       {confirmingFinish && onFinish && (
         <ConfirmDialog
-          title="¿Terminar la partida?"
-          message="Se acabará la partida ahora mismo y veréis el resumen con las preguntas respondidas hasta el momento."
-          confirmLabel="Sí, terminar"
+          title="Finish the game?"
+          message="The game will end right now and everyone will see the summary with the rounds played so far."
+          confirmLabel="Yes, finish"
           onConfirm={onFinish}
           onCancel={() => setConfirmingFinish(false)}
         />

@@ -13,16 +13,16 @@ export function OnlineRevealScreen({
   onFinish: () => void;
 }) {
   const lastResult = view.results[view.results.length - 1];
-  const [p0, p1] = view.players;
-  if (!p0 || !p1 || !lastResult) return null;
+  if (!lastResult) return null;
 
   const isLastRound = view.currentRound >= view.totalRounds;
 
   return (
     <RevealCard
-      players={[p0, p1]}
+      players={view.players}
       lastResult={lastResult}
       isLastRound={isLastRound}
+      isHost={view.isHost}
       onContinue={onAdvance}
       onFinish={onFinish}
     />

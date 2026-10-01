@@ -6,3 +6,10 @@ import { randomUUID } from "node:crypto";
 export function generateToken(): string {
   return randomUUID();
 }
+
+// Separate namespace from generateToken(): a player id is a public identity
+// (safe to send to every client), while a token is the secret proving you
+// are that player. Both happen to be uuids, but never use one as the other.
+export function generatePlayerId(): string {
+  return randomUUID();
+}

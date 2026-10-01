@@ -7,7 +7,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
-  cancelLabel = "Cancelar",
+  cancelLabel = "Cancel",
   onConfirm,
   onCancel,
 }: {

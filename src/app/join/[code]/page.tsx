@@ -1,4 +1,4 @@
-import { Game } from "@/components/Game";
+import { PreGameFlow } from "@/components/PreGameFlow";
 
 export default function JoinPage({
   params,
@@ -7,7 +7,7 @@ export default function JoinPage({
 }) {
   return (
     <main className="min-h-[100dvh] bg-background">
-      <Game initialJoinCode={params.code.toUpperCase()} />
+      <PreGameFlow initialJoinCode={params.code.toUpperCase()} />
     </main>
   );
 }

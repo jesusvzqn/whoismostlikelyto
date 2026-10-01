@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PlayerIndex } from "@/lib/game/types";
 import {
   clearOnlineSession,
   loadOnlineSession,
   saveOnlineSession,
 } from "@/lib/storage";
-import type { RoomView } from "./types";
+import type { PlayerId, RoomView } from "./types";
 
 const POLL_INTERVAL_MS = 1500;
 
@@ -69,7 +68,7 @@ export function useOnlineRoom() {
           return {
             ...s,
             status: "error",
-            error: err instanceof Error ? err.message : "Sala no encontrada",
+            error: err instanceof Error ? err.message : "Room not found",
           };
         });
       }
@@ -148,7 +147,11 @@ export function useOnlineRoom() {
     [code, token]
   );
 
-  const castVote = useCallback((vote: PlayerIndex) => mutate("vote", { vote }), [mutate]);
+  const startGame = useCallback(() => mutate("start"), [mutate]);
+  const castVote = useCallback(
+    (candidateId: PlayerId) => mutate("vote", { candidateId }),
+    [mutate]
+  );
   const advance = useCallback(() => mutate("advance"), [mutate]);
   const replay = useCallback(() => mutate("replay"), [mutate]);
   const finish = useCallback(() => mutate("finish"), [mutate]);
@@ -165,6 +168,7 @@ export function useOnlineRoom() {
     error: state.error,
     createRoom,
     joinRoom,
+    startGame,
     castVote,
     advance,
     replay,

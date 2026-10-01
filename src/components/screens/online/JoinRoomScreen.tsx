@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { BigButton } from "@/components/ui/BigButton";
-import { DevCredit } from "@/components/ui/DevCredit";
 import { ScreenShell } from "@/components/ui/ScreenShell";
-import { MAX_NAME_LENGTH } from "@/lib/game/types";
+import { MAX_NAME_LENGTH } from "@/lib/online/types";
 
 const CODE_LENGTH = 4;
 
@@ -38,14 +37,11 @@ export function JoinRoomScreen({
 
   return (
     <ScreenShell>
-      <DevCredit />
-      <h2 className="text-center text-2xl font-extrabold">
-        Unirse a una partida
-      </h2>
+      <h2 className="text-center text-2xl font-extrabold">Join a room</h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <label className="flex flex-col gap-1 text-sm font-semibold">
-          Código de la sala
+          Room code
           <input
             type="text"
             value={code}
@@ -58,20 +54,20 @@ export function JoinRoomScreen({
         </label>
 
         <label className="flex flex-col gap-1 text-sm font-semibold">
-          Tu nombre
+          Your name
           <input
             type="text"
             value={name}
             maxLength={MAX_NAME_LENGTH}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Nombre"
+            placeholder="Name"
             className="rounded-xl border-2 border-foreground/10 bg-surface px-4 py-3 text-base font-normal focus:border-primary focus:outline-none"
           />
         </label>
 
         {touched && !isValid && (
           <div className="rounded-xl bg-red-500/10 px-4 py-2 text-sm text-red-600">
-            Escribe tu nombre y un código de 4 letras.
+            Enter your name and a 4-letter code.
           </div>
         )}
 
@@ -82,10 +78,10 @@ export function JoinRoomScreen({
         )}
 
         <BigButton type="submit" disabled={pending}>
-          {pending ? "Uniéndote..." : "Unirse"}
+          {pending ? "Joining..." : "Join"}
         </BigButton>
         <BigButton type="button" variant="ghost" onClick={onBack}>
-          Volver
+          Back
         </BigButton>
       </form>
     </ScreenShell>

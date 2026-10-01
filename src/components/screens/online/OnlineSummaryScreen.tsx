@@ -2,7 +2,6 @@
 
 import { SummaryCard } from "@/components/screens/shared/SummaryCard";
 import { BigButton } from "@/components/ui/BigButton";
-import { DevCredit } from "@/components/ui/DevCredit";
 import { ScreenShell } from "@/components/ui/ScreenShell";
 import type { RoomView } from "@/lib/online/types";
 
@@ -15,18 +14,26 @@ export function OnlineSummaryScreen({
   onReplay: () => void;
   onExitToMenu: () => void;
 }) {
-  const [p0, p1] = view.players;
-  if (!p0 || !p1) return null;
+  if (!view.finalRanking) return null;
 
   return (
     <ScreenShell>
-      <DevCredit />
-      <SummaryCard players={[p0, p1]} results={view.results} />
+      <SummaryCard
+        players={view.players}
+        ranking={view.finalRanking}
+        results={view.results}
+      />
 
       <div className="flex flex-col gap-3">
-        <BigButton onClick={onReplay}>Jugar otra vez</BigButton>
+        {view.isHost ? (
+          <BigButton onClick={onReplay}>Play again</BigButton>
+        ) : (
+          <p className="text-center text-sm text-foreground/60">
+            Waiting for the host to start a new game...
+          </p>
+        )}
         <BigButton variant="secondary" onClick={onExitToMenu}>
-          Salir
+          Exit
         </BigButton>
       </div>
     </ScreenShell>
